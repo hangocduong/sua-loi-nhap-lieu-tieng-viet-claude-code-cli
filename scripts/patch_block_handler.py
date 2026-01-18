@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Block replacement handler for Vietnamese IME patch.
-v1.7.0: Option B - Find and replace entire DEL handling block.
+v1.7.2: Block replacement with prefix condition preservation.
 """
 import re
-from typing import Optional, Dict, Tuple
+from typing import Optional, Tuple
 
 DEL_CHAR = chr(127)  # 0x7F
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Claude Code Vietnamese IME Patch - Core logic.
-v1.7.0: Option B - Complete block replacement for optimal performance.
+v1.7.2: Block replacement with prefix condition preservation.
 Original fix: https://github.com/manhit96/claude-code-vietnamese-fix
 """
 import re
@@ -10,7 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict
 
-# Import block handler for v1.7.0 replacement strategy
+# Import block handler for v1.7+ replacement strategy
 SCRIPT_DIR = Path(__file__).parent
 sys.path.insert(0, str(SCRIPT_DIR))
 import patch_block_handler as block_handler
@@ -98,7 +98,7 @@ def patch(cli_js: Path) -> bool:
         return False
     print(f"Found vars: {vars}")
 
-    # v1.7.0: Find and replace entire DEL block (Option B)
+    # Find and replace entire DEL block
     block_result = block_handler.find_del_block(content, vars)
     if not block_result:
         print("Error: Could not find DEL handling block.")
@@ -118,7 +118,7 @@ def patch(cli_js: Path) -> bool:
     patch_code = block_handler.create_replacement_patch(vars, prefix_cond)
     new_content = content[:start_pos] + patch_code + content[end_pos:]
     cli_js.write_text(new_content, 'utf-8')
-    print("Patch applied successfully! (v1.7.0 block replacement)")
+    print("Patch applied successfully! (v1.7.2)")
     return True
 
 def restore(cli_js: Path) -> bool:

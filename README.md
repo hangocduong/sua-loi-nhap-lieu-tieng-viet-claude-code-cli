@@ -26,19 +26,6 @@ bash install.sh # Chạy cài đặt
 
 ---
 
-## Cài Đặt Thủ Công
-
-```bash
-# Clone repo
-git clone https://github.com/hangocduong/claude-code-vietnamese-fix.git
-cd claude-code-vietnamese-fix
-
-# Chạy trình cài đặt
-./install.sh
-```
-
----
-
 ## Sử Dụng
 
 | Lệnh | Mô tả |

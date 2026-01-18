@@ -52,13 +52,13 @@ if (Test-Path $LocalScripts) {
     Write-Info "Installing from local repo..."
     Copy-Item "$ScriptDir\scripts\vietnamese-ime-patch.ps1" $TargetDir -Force
     Copy-Item "$ScriptDir\scripts\vietnamese-ime-patch-core.py" $TargetDir -Force
-    Copy-Item "$ScriptDir\scripts\patch-block-handler.py" $TargetDir -Force
+    Copy-Item "$ScriptDir\scripts\patch_block_handler.py" $TargetDir -Force
     Copy-Item "$ScriptDir\scripts\claude-update-wrapper.ps1" $TargetDir -Force
 } else {
     Write-Info "Downloading scripts from GitHub..."
     Invoke-WebRequest "$RepoUrl/scripts/vietnamese-ime-patch.ps1" -OutFile "$TargetDir\vietnamese-ime-patch.ps1"
     Invoke-WebRequest "$RepoUrl/scripts/vietnamese-ime-patch-core.py" -OutFile "$TargetDir\vietnamese-ime-patch-core.py"
-    Invoke-WebRequest "$RepoUrl/scripts/patch-block-handler.py" -OutFile "$TargetDir\patch-block-handler.py"
+    Invoke-WebRequest "$RepoUrl/scripts/patch_block_handler.py" -OutFile "$TargetDir\patch_block_handler.py"
     Invoke-WebRequest "$RepoUrl/scripts/claude-update-wrapper.ps1" -OutFile "$TargetDir\claude-update-wrapper.ps1"
 }
 Write-Success "Scripts installed"

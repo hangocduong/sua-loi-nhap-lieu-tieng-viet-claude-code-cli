@@ -93,11 +93,11 @@ def find_insertion_point(content: str, vars: dict) -> Optional[int]:
     return None
 
 def create_patch(vars: dict) -> str:
-    """v1.6.1: Stack-based IME fix. ALWAYS update UI (original code already set wrong values)."""
+    """v1.6.2: Only run for DEL inputs to avoid conflict with normal char handling."""
     inp, cur = vars["input"], vars["cur_state"]
     tfn, ofn = vars["text_fn"], vars["offset_fn"]
-    # Always update UI - original code already updated with wrong values, we must overwrite
-    return (f'{{let _ns={cur},_sk=[];'
+    # Only process when input has DEL chars - don't interfere with normal input handling
+    return (f'if({inp}.includes("{DEL_CHAR}")){{let _ns={cur},_sk=[];'
             f'for(const _c of {inp}){{if(_c==="{DEL_CHAR}"){{if(_sk.length>0)_sk.pop();else _ns=_ns.backspace()}}else _sk.push(_c)}}'
             f'for(const _c of _sk)_ns=_ns.insert(_c);'
             f'{tfn}(_ns.text);{ofn}(_ns.offset)}}')

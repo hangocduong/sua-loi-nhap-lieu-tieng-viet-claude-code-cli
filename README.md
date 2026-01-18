@@ -218,6 +218,10 @@ Nếu gặp lỗi, vui lòng [mở issue](https://github.com/hangocduong/sua-loi
 
 ## Changelog
 
+### v1.6.2
+
+- Sửa lỗi: Chỉ chạy patch khi input có DEL, tránh conflict với xử lý ký tự thường
+
 ### v1.6.1
 
 - Sửa lỗi: LUÔN update UI với giá trị đúng (bỏ điều kiện if gây skip)

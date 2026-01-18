@@ -2,26 +2,24 @@
 
 [![Version](https://img.shields.io/github/v/release/hangocduong/claude-code-vietnamese-fix?label=version)](https://github.com/hangocduong/claude-code-vietnamese-fix/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 
 > Sửa lỗi nhập liệu tiếng Việt (OpenKey, EVKey, Unikey, PHTV) cho terminal Claude Code.
 
 ---
 
-## Cài Đặt Nhanh
+## Cài Đặt
 
-**Một dòng lệnh duy nhất:**
+### macOS / Linux
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/hangocduong/claude-code-vietnamese-fix/main/install.sh | bash
 ```
 
-Hoặc nếu bạn muốn xem trước script:
+### Windows (PowerShell)
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/hangocduong/claude-code-vietnamese-fix/main/install.sh -o install.sh
-cat install.sh  # Xem nội dung
-bash install.sh # Chạy cài đặt
+```powershell
+irm https://raw.githubusercontent.com/hangocduong/claude-code-vietnamese-fix/main/install.ps1 | iex
 ```
 
 ---
@@ -63,14 +61,14 @@ Gõ: "xin chào" → Kết quả: "xin chào" ✓
 
 - Python 3.6+
 - Claude Code qua npm: `npm install -g @anthropic-ai/claude-code`
-- macOS hoặc Linux
+- Windows, macOS, hoặc Linux
 
 ---
 
 ## Phiên Bản Đã Kiểm Tra
 
 - Claude Code v2.1.12 (Tháng 1/2026)
-- macOS (Homebrew/npm)
+- macOS, Windows (npm)
 
 ---
 
@@ -124,11 +122,14 @@ if(_vn.length>0){
 
 ```text
 claude-code-vietnamese-fix/
-├── install.sh                           # Trình cài đặt
+├── install.sh                           # Installer (macOS/Linux)
+├── install.ps1                          # Installer (Windows)
 └── scripts/
-    ├── vietnamese-ime-patch.sh          # Script chính
-    ├── vietnamese-ime-patch-core.py     # Logic xử lý
-    └── claude-update-wrapper.sh         # Wrapper cập nhật
+    ├── vietnamese-ime-patch.sh          # Wrapper (Bash)
+    ├── vietnamese-ime-patch.ps1         # Wrapper (PowerShell)
+    ├── vietnamese-ime-patch-core.py     # Logic chính
+    ├── claude-update-wrapper.sh         # Update (Bash)
+    └── claude-update-wrapper.ps1        # Update (PowerShell)
 ```
 
 ---

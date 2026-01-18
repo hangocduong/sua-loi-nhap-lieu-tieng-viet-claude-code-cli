@@ -1,6 +1,6 @@
-# Claude Code - Bản Vá Bộ Gõ Tiếng Việt
+# Sửa Lỗi Nhập Liệu Tiếng Việt cho Claude Code CLI
 
-[![Version](https://img.shields.io/github/v/release/hangocduong/claude-code-vietnamese-fix?label=version)](https://github.com/hangocduong/claude-code-vietnamese-fix/releases)
+[![Version](https://img.shields.io/github/v/release/hangocduong/sua-loi-nhap-lieu-tieng-viet-claude-code-cli?label=version)](https://github.com/hangocduong/sua-loi-nhap-lieu-tieng-viet-claude-code-cli/releases)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 
@@ -13,13 +13,13 @@
 ### macOS / Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hangocduong/claude-code-vietnamese-fix/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/hangocduong/sua-loi-nhap-lieu-tieng-viet-claude-code-cli/main/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-irm https://raw.githubusercontent.com/hangocduong/claude-code-vietnamese-fix/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/hangocduong/sua-loi-nhap-lieu-tieng-viet-claude-code-cli/main/install.ps1 | iex
 ```
 
 ### ⚠️ Quan trọng
@@ -145,7 +145,7 @@ for(const c of _a) CA = CA.insert(c);
 ## Cấu Trúc Dự Án
 
 ```text
-claude-code-vietnamese-fix/
+sua-loi-nhap-lieu-tieng-viet-claude-code-cli/
 ├── install.sh                           # Installer (macOS/Linux)
 ├── install.ps1                          # Installer (Windows)
 └── scripts/

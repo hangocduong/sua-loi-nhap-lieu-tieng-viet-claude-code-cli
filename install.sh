@@ -1,6 +1,6 @@
 #!/bin/bash
 # Claude Code Vietnamese IME Fix - Installer
-# https://github.com/hangocduong/claude-code-vietnamese-fix
+# https://github.com/hangocduong/sua-loi-nhap-lieu-tieng-viet-claude-code-cli
 
 set -e
 
@@ -15,7 +15,7 @@ log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-REPO_URL="https://raw.githubusercontent.com/hangocduong/claude-code-vietnamese-fix/main"
+REPO_URL="https://raw.githubusercontent.com/hangocduong/sua-loi-nhap-lieu-tieng-viet-claude-code-cli/main"
 TARGET_DIR="$HOME/.claude/scripts"
 
 echo ""

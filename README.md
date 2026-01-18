@@ -218,6 +218,10 @@ Nếu gặp lỗi, vui lòng [mở issue](https://github.com/hangocduong/sua-loi
 
 ## Changelog
 
+### v1.6.1
+
+- Sửa lỗi: LUÔN update UI với giá trị đúng (bỏ điều kiện if gây skip)
+
 ### v1.6.0
 
 - Viết lại hoàn toàn thuật toán với proper JavaScript scoping

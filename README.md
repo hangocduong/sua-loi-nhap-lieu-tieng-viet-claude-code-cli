@@ -189,6 +189,7 @@ sua-loi-nhap-lieu-tieng-viet-claude-code-cli/
     ├── vietnamese-ime-patch.sh          # Entry point (Bash)
     ├── vietnamese-ime-patch.ps1         # Entry point (PowerShell)
     ├── vietnamese-ime-patch-core.py     # Logic chính
+    ├── patch-block-handler.py           # Block replacement logic (v1.7+)
     ├── claude-update-wrapper.sh         # Update helper (Bash)
     └── claude-update-wrapper.ps1        # Update helper (PowerShell)
 ```
@@ -217,6 +218,13 @@ Nếu gặp lỗi, vui lòng [mở issue](https://github.com/hangocduong/sua-loi
 ---
 
 ## Changelog
+
+### v1.7.0
+
+- **Viết lại hoàn toàn**: Thay thế toàn bộ block xử lý DEL (Option B)
+- Loại bỏ double processing - chỉ một lần xử lý, một lần cập nhật UI
+- Tối ưu hiệu suất và độ ổn định
+- Modular code structure
 
 ### v1.6.2
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Claude Code Vietnamese IME Patch - Core logic.
+v1.7.0: Option B - Complete block replacement for optimal performance.
 Original fix: https://github.com/manhit96/claude-code-vietnamese-fix
 """
 import re
@@ -9,6 +10,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Dict
 
+# Import block handler for v1.7.0 replacement strategy
+SCRIPT_DIR = Path(__file__).parent
+sys.path.insert(0, str(SCRIPT_DIR))
+from importlib import import_module
+block_handler = import_module('patch-block-handler')
+
 DEL_CHAR = chr(127)  # 0x7F
 
 def get_version(content: str) -> str:
@@ -16,10 +23,8 @@ def get_version(content: str) -> str:
     return m.group(1) if m else "unknown"
 
 def is_patched(content: str) -> bool:
-    # v1.6: _ns/_sk, v1.4: _od/_wd, v1.3: _lastDel, v1.0: _vn
-    return ('_ns=' in content and '_sk=' in content) or \
-           ('_od=0' in content and '_wd=' in content) or \
-           ('_lastDel=' in content) or ('_vn=' in content)
+    # v1.7+: _ns/_sk with stack algorithm
+    return '_ns=' in content and '_sk=' in content
 
 def extract_variables(content: str) -> Optional[Dict]:
     """Extract variable names dynamically from minified code."""
@@ -78,29 +83,6 @@ def extract_variables(content: str) -> Optional[Dict]:
         'text_fn': text_fn, 'offset_fn': offset_fn, 'count': count_var
     }
 
-def find_insertion_point(content: str, vars: dict) -> Optional[int]:
-    """Find where to insert patch after the backspace handling if-block."""
-    # Code structure: if(!S.equals(CA)){if(S.text!==CA.text)Q(CA.text);T(CA.offset)}ct1(),lt1();return}
-    # Insert AFTER T(CA.offset)} and BEFORE ct1() - right after the if-block closes
-    # Pattern: offsetFn(state.offset)} followed by some function call (like ct1())
-    pattern = rf'{re.escape(vars["offset_fn"])}\({re.escape(vars["state"])}\.offset\)\}}'
-
-    for m in re.finditer(pattern, content):
-        surrounding = content[max(0, m.start()-300):m.end()+50]
-        if 'backspace()' in surrounding or 'deleteBackward()' in surrounding:
-            # Insert right after the closing }
-            return m.end()
-    return None
-
-def create_patch(vars: dict) -> str:
-    """v1.6.2: Only run for DEL inputs to avoid conflict with normal char handling."""
-    inp, cur = vars["input"], vars["cur_state"]
-    tfn, ofn = vars["text_fn"], vars["offset_fn"]
-    # Only process when input has DEL chars - don't interfere with normal input handling
-    return (f'if({inp}.includes("{DEL_CHAR}")){{let _ns={cur},_sk=[];'
-            f'for(const _c of {inp}){{if(_c==="{DEL_CHAR}"){{if(_sk.length>0)_sk.pop();else _ns=_ns.backspace()}}else _sk.push(_c)}}'
-            f'for(const _c of _sk)_ns=_ns.insert(_c);'
-            f'{tfn}(_ns.text);{ofn}(_ns.offset)}}')
 
 def patch(cli_js: Path) -> bool:
     content = cli_js.read_text('utf-8')
@@ -117,21 +99,25 @@ def patch(cli_js: Path) -> bool:
         return False
     print(f"Found vars: {vars}")
 
-    pos = find_insertion_point(content, vars)
-    if not pos:
-        print("Error: Could not find insertion point.")
+    # v1.7.0: Find and replace entire DEL block (Option B)
+    block_range = block_handler.find_del_block(content, vars)
+    if not block_range:
+        print("Error: Could not find DEL handling block.")
         return False
+
+    start_pos, end_pos = block_range
+    print(f"Found DEL block: {end_pos - start_pos} bytes")
 
     # Backup
     backup = cli_js.with_suffix(f'.backup.{datetime.now():%Y%m%d_%H%M%S}')
     shutil.copy(cli_js, backup)
     print(f"Backup: {backup}")
 
-    # Apply patch
-    patch_code = create_patch(vars)
-    new_content = content[:pos] + patch_code + content[pos:]
+    # Replace entire block with correct implementation
+    patch_code = block_handler.create_replacement_patch(vars)
+    new_content = content[:start_pos] + patch_code + content[end_pos:]
     cli_js.write_text(new_content, 'utf-8')
-    print("Patch applied successfully!")
+    print("Patch applied successfully! (v1.7.0 block replacement)")
     return True
 
 def restore(cli_js: Path) -> bool:

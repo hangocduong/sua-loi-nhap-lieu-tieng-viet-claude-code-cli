@@ -53,12 +53,14 @@ if [[ -n "$SCRIPT_DIR" && -f "$SCRIPT_DIR/scripts/vietnamese-ime-patch.sh" ]]; t
     log_info "Installing from local repo..."
     cp "$SCRIPT_DIR/scripts/vietnamese-ime-patch.sh" "$TARGET_DIR/"
     cp "$SCRIPT_DIR/scripts/vietnamese-ime-patch-core.py" "$TARGET_DIR/"
+    cp "$SCRIPT_DIR/scripts/patch-block-handler.py" "$TARGET_DIR/"
     cp "$SCRIPT_DIR/scripts/claude-update-wrapper.sh" "$TARGET_DIR/"
 else
     # Remote installation via curl
     log_info "Downloading scripts from GitHub..."
     curl -fsSL "$REPO_URL/scripts/vietnamese-ime-patch.sh" -o "$TARGET_DIR/vietnamese-ime-patch.sh"
     curl -fsSL "$REPO_URL/scripts/vietnamese-ime-patch-core.py" -o "$TARGET_DIR/vietnamese-ime-patch-core.py"
+    curl -fsSL "$REPO_URL/scripts/patch-block-handler.py" -o "$TARGET_DIR/patch-block-handler.py"
     curl -fsSL "$REPO_URL/scripts/claude-update-wrapper.sh" -o "$TARGET_DIR/claude-update-wrapper.sh"
 fi
 

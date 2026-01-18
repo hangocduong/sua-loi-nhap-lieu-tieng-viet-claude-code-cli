@@ -101,29 +101,42 @@ if(l.includes("\x7f")){
 }
 ```
 
-### Mã Được Chèn (v1.3.0+)
+### Mã Được Chèn (v1.4.0+)
 
 ```javascript
-// Tìm DEL cuối cùng, chỉ chèn ký tự sau nó
-// Fix lỗi gõ nhanh: nhiều DEL+char có thể đến cùng lúc
-let _lastDel=l.lastIndexOf("\x7f");
-let _vn=_lastDel>=0?l.slice(_lastDel+1):"";
-if(_vn.length>0){
-  for(const _c of _vn)CA=CA.insert(_c);
-  if(!S.equals(CA)){
-    if(S.text!==CA.text)Q(CA.text);
-    T(CA.offset)
-  }
+// Stack approach: đếm DEL nào ảnh hưởng original vs consume input chars
+let _s=0, _od=0;
+for(let i=0; i<l.length; i++) {
+  l[i]==="\x7f" ? (_s>0 ? _s-- : _od++) : _s++;
 }
+let _nd = (l.match(/\x7f/g)||[]).length;
+let _wd = _nd - _od;  // Số ký tự bị xóa nhầm
+
+// Khôi phục ký tự bị xóa nhầm
+if(_wd > 0) {
+  let _r = S.text.slice(S.text.length-_nd, S.text.length-_od);
+  for(const c of _r) CA = CA.insert(c);
+}
+
+// Chèn ký tự sau DEL cuối
+let _ld = l.lastIndexOf("\x7f");
+let _a = _ld>=0 ? l.slice(_ld+1) : "";
+for(const c of _a) CA = CA.insert(c);
 ```
 
-**Tại sao cần `lastIndexOf` thay vì `replace`?**
+**Vấn đề gốc:** Code gốc làm backspace TRƯỚC khi chèn ký tự mới.
 
-Khi gõ nhanh, nhiều cặp DEL+ký tự có thể đến trong một batch:
+```text
+State: "c" | Input: "o[DEL]ộ" (gõ "cộ" nhanh)
+Code gốc: backspace trên "c" → "" (xóa nhầm "c"!)
+Đúng ra: chèn "o"→"co", backspace→"c", chèn "ộ"→"cộ"
+```
 
-- Input: `[DEL]á[DEL]à` (gõ "a" → "á" → "à" nhanh)
-- Patch cũ: xóa DEL → `áà` → chèn cả hai → **SAI**
-- Patch mới: tìm DEL cuối → chỉ chèn `à` → **ĐÚNG**
+**Giải pháp:** Dùng stack để tính số DEL thực sự ảnh hưởng state gốc:
+
+- Mỗi ký tự non-DEL: push stack
+- Mỗi DEL: pop stack (hoặc xóa từ original nếu stack rỗng)
+- Khôi phục ký tự bị xóa nhầm, rồi chèn ký tự thay thế
 
 </details>
 

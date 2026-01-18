@@ -16,11 +16,10 @@ def get_version(content: str) -> str:
     return m.group(1) if m else "unknown"
 
 def is_patched(content: str) -> bool:
-    # Check for both old (replace) and new (lastIndexOf) patch markers
-    has_marker = '_vn=' in content or '_lastDel=' in content
-    has_del_handling = ('lastIndexOf' in content and 'slice(' in content) or \
-                       ('replace(/\\x7f/g' in content or f'replace(/{DEL_CHAR}/g' in content)
-    return has_marker and has_del_handling
+    # Check for v1.3 (lastIndexOf) or v1.4+ (stack-based _od/_wd) patch markers
+    return ('_od=0' in content and '_wd=' in content) or \
+           ('_lastDel=' in content and 'slice(' in content) or \
+           ('_vn=' in content and 'replace(/' in content)
 
 def extract_variables(content: str) -> Optional[Dict]:
     """Extract variable names dynamically from minified code."""
@@ -94,23 +93,15 @@ def find_insertion_point(content: str, vars: dict) -> Optional[int]:
     return None
 
 def create_patch(vars: dict) -> str:
-    """Create the Vietnamese IME fix code.
-
-    Fix for fast typing: When multiple DEL+char pairs arrive in one batch,
-    only insert characters AFTER the last DEL, not all non-DEL characters.
-
-    Example: Input "[DEL]á[DEL]à" with fast typing
-    - Old patch: removes DELs -> "áà" -> inserts both -> WRONG
-    - New patch: finds last DEL -> inserts only "à" -> CORRECT
-    """
-    # Use lastIndexOf to find the last DEL, then slice to get chars after it
-    return (f'let _lastDel={vars["input"]}.lastIndexOf("{DEL_CHAR}");'
-            f'let _vn=_lastDel>=0?{vars["input"]}.slice(_lastDel+1):"";'
-            f'if(_vn.length>0){{'
-            f'for(const _c of _vn){vars["state"]}={vars["state"]}.insert(_c);'
-            f'if(!{vars["cur_state"]}.equals({vars["state"]})){{'
-            f'if({vars["cur_state"]}.text!=={vars["state"]}.text){vars["text_fn"]}({vars["state"]}.text);'
-            f'{vars["offset_fn"]}({vars["state"]}.offset)}}}}')
+    """Vietnamese IME fix: handle chars before DEL that weren't inserted yet."""
+    inp, st, cur = vars["input"], vars["state"], vars["cur_state"]
+    tfn, ofn = vars["text_fn"], vars["offset_fn"]
+    # Stack approach: count DELs that should affect original vs consume input chars
+    return (f'let _s=0,_od=0;for(let _i=0;_i<{inp}.length;_i++){{{inp}[_i]==="{DEL_CHAR}"?_s>0?_s--:_od++:_s++}}'
+            f'let _nd=({inp}.match(/{DEL_CHAR}/g)||[]).length,_wd=_nd-_od;'
+            f'if(_wd>0){{let _r={cur}.text.slice({cur}.text.length-_nd,{cur}.text.length-_od);for(const _c of _r){st}={st}.insert(_c)}}'
+            f'let _ld={inp}.lastIndexOf("{DEL_CHAR}"),_a=_ld>=0?{inp}.slice(_ld+1):"";for(const _c of _a){st}={st}.insert(_c);'
+            f'if(!{cur}.equals({st})){{if({cur}.text!=={st}.text){tfn}({st}.text);{ofn}({st}.offset)}}')
 
 def patch(cli_js: Path) -> bool:
     content = cli_js.read_text('utf-8')

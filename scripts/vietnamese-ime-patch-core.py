@@ -16,7 +16,11 @@ def get_version(content: str) -> str:
     return m.group(1) if m else "unknown"
 
 def is_patched(content: str) -> bool:
-    return '_vn=' in content and ('replace(/\\x7f/g' in content or f'replace(/{DEL_CHAR}/g' in content)
+    # Check for both old (replace) and new (lastIndexOf) patch markers
+    has_marker = '_vn=' in content or '_lastDel=' in content
+    has_del_handling = ('lastIndexOf' in content and 'slice(' in content) or \
+                       ('replace(/\\x7f/g' in content or f'replace(/{DEL_CHAR}/g' in content)
+    return has_marker and has_del_handling
 
 def extract_variables(content: str) -> Optional[Dict]:
     """Extract variable names dynamically from minified code."""
@@ -90,10 +94,18 @@ def find_insertion_point(content: str, vars: dict) -> Optional[int]:
     return None
 
 def create_patch(vars: dict) -> str:
-    """Create the Vietnamese IME fix code."""
-    # Insert after backspace processing, add character reinsertion
-    # Structure: let _vn=...; if(_vn.length>0){ for(...)...; if(!S.equals(CA)){...} }
-    return (f'let _vn={vars["input"]}.replace(/{DEL_CHAR}/g,"");'
+    """Create the Vietnamese IME fix code.
+
+    Fix for fast typing: When multiple DEL+char pairs arrive in one batch,
+    only insert characters AFTER the last DEL, not all non-DEL characters.
+
+    Example: Input "[DEL]á[DEL]à" with fast typing
+    - Old patch: removes DELs -> "áà" -> inserts both -> WRONG
+    - New patch: finds last DEL -> inserts only "à" -> CORRECT
+    """
+    # Use lastIndexOf to find the last DEL, then slice to get chars after it
+    return (f'let _lastDel={vars["input"]}.lastIndexOf("{DEL_CHAR}");'
+            f'let _vn=_lastDel>=0?{vars["input"]}.slice(_lastDel+1):"";'
             f'if(_vn.length>0){{'
             f'for(const _c of _vn){vars["state"]}={vars["state"]}.insert(_c);'
             f'if(!{vars["cur_state"]}.equals({vars["state"]})){{'

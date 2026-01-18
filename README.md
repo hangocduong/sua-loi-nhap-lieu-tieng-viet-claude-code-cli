@@ -101,10 +101,13 @@ if(l.includes("\x7f")){
 }
 ```
 
-### Mã Được Chèn
+### Mã Được Chèn (v1.3.0+)
 
 ```javascript
-let _vn=l.replace(/\x7f/g,"");
+// Tìm DEL cuối cùng, chỉ chèn ký tự sau nó
+// Fix lỗi gõ nhanh: nhiều DEL+char có thể đến cùng lúc
+let _lastDel=l.lastIndexOf("\x7f");
+let _vn=_lastDel>=0?l.slice(_lastDel+1):"";
 if(_vn.length>0){
   for(const _c of _vn)CA=CA.insert(_c);
   if(!S.equals(CA)){
@@ -113,6 +116,14 @@ if(_vn.length>0){
   }
 }
 ```
+
+**Tại sao cần `lastIndexOf` thay vì `replace`?**
+
+Khi gõ nhanh, nhiều cặp DEL+ký tự có thể đến trong một batch:
+
+- Input: `[DEL]á[DEL]à` (gõ "a" → "á" → "à" nhanh)
+- Patch cũ: xóa DEL → `áà` → chèn cả hai → **SAI**
+- Patch mới: tìm DEL cuối → chỉ chèn `à` → **ĐÚNG**
 
 </details>
 

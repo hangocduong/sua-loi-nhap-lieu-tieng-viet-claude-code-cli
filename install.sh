@@ -15,12 +15,14 @@ log_success() { echo -e "${GREEN}[OK]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_URL="https://raw.githubusercontent.com/hangocduong/claude-code-vietnamese-fix/main"
 TARGET_DIR="$HOME/.claude/scripts"
 
-echo "========================================"
-echo "Claude Code Vietnamese IME Fix Installer"
-echo "========================================"
+echo ""
+echo "╔══════════════════════════════════════════╗"
+echo "║  Claude Code Vietnamese IME Fix          ║"
+echo "║  Bản vá bộ gõ tiếng Việt                 ║"
+echo "╚══════════════════════════════════════════╝"
 echo ""
 
 # Check Python
@@ -32,7 +34,8 @@ log_success "Python 3 found"
 
 # Check Claude Code
 if ! command -v claude &>/dev/null; then
-    log_error "Claude Code not found. Install with: npm install -g @anthropic-ai/claude-code"
+    log_error "Claude Code not found"
+    echo "    Install with: npm install -g @anthropic-ai/claude-code"
     exit 1
 fi
 CLAUDE_VERSION=$(claude --version 2>/dev/null | head -1)
@@ -40,13 +43,24 @@ log_success "Claude Code found: $CLAUDE_VERSION"
 
 # Create target directory
 mkdir -p "$TARGET_DIR"
-log_info "Target directory: $TARGET_DIR"
+log_info "Target: $TARGET_DIR"
 
-# Copy scripts
-log_info "Copying scripts..."
-cp "$SCRIPT_DIR/scripts/vietnamese-ime-patch.sh" "$TARGET_DIR/"
-cp "$SCRIPT_DIR/scripts/vietnamese-ime-patch-core.py" "$TARGET_DIR/"
-cp "$SCRIPT_DIR/scripts/claude-update-wrapper.sh" "$TARGET_DIR/"
+# Determine script source (local repo or remote)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || SCRIPT_DIR=""
+
+if [[ -n "$SCRIPT_DIR" && -f "$SCRIPT_DIR/scripts/vietnamese-ime-patch.sh" ]]; then
+    # Local installation from cloned repo
+    log_info "Installing from local repo..."
+    cp "$SCRIPT_DIR/scripts/vietnamese-ime-patch.sh" "$TARGET_DIR/"
+    cp "$SCRIPT_DIR/scripts/vietnamese-ime-patch-core.py" "$TARGET_DIR/"
+    cp "$SCRIPT_DIR/scripts/claude-update-wrapper.sh" "$TARGET_DIR/"
+else
+    # Remote installation via curl
+    log_info "Downloading scripts from GitHub..."
+    curl -fsSL "$REPO_URL/scripts/vietnamese-ime-patch.sh" -o "$TARGET_DIR/vietnamese-ime-patch.sh"
+    curl -fsSL "$REPO_URL/scripts/vietnamese-ime-patch-core.py" -o "$TARGET_DIR/vietnamese-ime-patch-core.py"
+    curl -fsSL "$REPO_URL/scripts/claude-update-wrapper.sh" -o "$TARGET_DIR/claude-update-wrapper.sh"
+fi
 
 # Make executable
 chmod +x "$TARGET_DIR/vietnamese-ime-patch.sh"
@@ -76,10 +90,10 @@ if [[ -n "$SHELL_CONFIG" ]]; then
         echo "$ALIAS_LINE2" >> "$SHELL_CONFIG"
         log_success "Aliases added to $SHELL_CONFIG"
     else
-        log_info "Aliases already exist in $SHELL_CONFIG"
+        log_info "Aliases already exist"
     fi
 else
-    log_warn "Could not detect shell config. Add aliases manually:"
+    log_warn "Could not detect shell config. Add manually:"
     echo '  alias claude-vn-patch="$HOME/.claude/scripts/vietnamese-ime-patch.sh"'
     echo '  alias claude-update="$HOME/.claude/scripts/claude-update-wrapper.sh"'
 fi
@@ -90,13 +104,15 @@ log_info "Applying patch..."
 "$TARGET_DIR/vietnamese-ime-patch.sh" patch
 
 echo ""
-echo "========================================"
-log_success "Installation complete!"
-echo "========================================"
+echo "╔══════════════════════════════════════════╗"
+echo "║  ✓ Installation complete!                ║"
+echo "╚══════════════════════════════════════════╝"
 echo ""
-echo "Commands available (after restarting terminal or running 'source $SHELL_CONFIG'):"
-echo "  claude-vn-patch        - Apply/check patch"
-echo "  claude-vn-patch status - Check patch status"
-echo "  claude-update          - Update Claude + auto-patch"
+echo "Commands (restart terminal or run 'source $SHELL_CONFIG'):"
 echo ""
-echo "You can now type Vietnamese in Claude Code!"
+echo "  claude-vn-patch        Apply/check patch"
+echo "  claude-vn-patch status Check status"
+echo "  claude-update          Update Claude + auto-patch"
+echo ""
+echo "Bạn có thể gõ tiếng Việt trong Claude Code!"
+echo ""

@@ -7,24 +7,26 @@ from typing import Optional, Dict, Tuple
 
 DEL_CHAR = chr(127)  # 0x7F
 
-def find_del_block(content: str, vars: dict) -> Optional[Tuple[int, int]]:
+def find_del_block(content: str, vars: dict) -> Optional[Tuple[int, int, str]]:
     """Find the entire DEL handling if-block boundaries for replacement.
 
-    Searches for: if(input.includes(DEL)){...}
-    Returns: (start_pos, end_pos) or None
+    Actual pattern: if(!QA.backspace&&!QA.delete&&l.includes("\\x7f")){...}
+    Returns: (start_pos, end_pos, prefix_condition) or None
     """
     input_var = vars["input"]
 
-    # Find the if statement: if(l.includes("\x7f")){
+    # Pattern matches: if(PREFIX&&input.includes(DEL)){ - capture the prefix
     if_patterns = [
-        rf'if\(\s*{re.escape(input_var)}\.includes\("{DEL_CHAR}"\)\s*\){{',
-        rf'if\(\s*{re.escape(input_var)}\.includes\("\\x7f"\)\s*){{'
+        rf'if\(([^{{]*?)&&{re.escape(input_var)}\.includes\("{DEL_CHAR}"\)\){{',
+        rf'if\(([^{{]*?)&&{re.escape(input_var)}\.includes\("\\x7f"\)\){{'
     ]
 
     start_match = None
+    prefix_cond = ""
     for pattern in if_patterns:
         start_match = re.search(pattern, content)
         if start_match:
+            prefix_cond = start_match.group(1)  # Capture the prefix condition
             break
 
     if not start_match:
@@ -51,21 +53,28 @@ def find_del_block(content: str, vars: dict) -> Optional[Tuple[int, int]]:
     if 'backspace()' not in block_content and 'deleteBackward()' not in block_content:
         return None
 
-    return (start_pos, pos)
+    return (start_pos, pos, prefix_cond)
 
-def create_replacement_patch(vars: dict) -> str:
+def create_replacement_patch(vars: dict, prefix_cond: str = "") -> str:
     """Generate complete replacement block with stack-based algorithm.
 
     This replaces the ENTIRE original DEL handling block, ensuring:
     - Single state machine (no double processing)
     - Correct sequential DEL handling
     - Atomic operation
+    - Preserves original prefix conditions (e.g., !QA.backspace&&!QA.delete)
     """
     inp, cur = vars["input"], vars["cur_state"]
     tfn, ofn = vars["text_fn"], vars["offset_fn"]
 
+    # Build condition: prefix&&input.includes(DEL) or just input.includes(DEL)
+    if prefix_cond:
+        condition = f'{prefix_cond}&&{inp}.includes("{DEL_CHAR}")'
+    else:
+        condition = f'{inp}.includes("{DEL_CHAR}")'
+
     return (
-        f'if({inp}.includes("{DEL_CHAR}"))'
+        f'if({condition})'
         f'{{let _ns={cur},_sk=[];'
         f'for(const _c of {inp})'
         f'{{if(_c==="{DEL_CHAR}")'

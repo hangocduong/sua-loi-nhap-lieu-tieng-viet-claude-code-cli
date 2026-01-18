@@ -99,13 +99,15 @@ def patch(cli_js: Path) -> bool:
     print(f"Found vars: {vars}")
 
     # v1.7.0: Find and replace entire DEL block (Option B)
-    block_range = block_handler.find_del_block(content, vars)
-    if not block_range:
+    block_result = block_handler.find_del_block(content, vars)
+    if not block_result:
         print("Error: Could not find DEL handling block.")
         return False
 
-    start_pos, end_pos = block_range
+    start_pos, end_pos, prefix_cond = block_result
     print(f"Found DEL block: {end_pos - start_pos} bytes")
+    if prefix_cond:
+        print(f"Prefix condition: {prefix_cond}")
 
     # Backup
     backup = cli_js.with_suffix(f'.backup.{datetime.now():%Y%m%d_%H%M%S}')
@@ -113,7 +115,7 @@ def patch(cli_js: Path) -> bool:
     print(f"Backup: {backup}")
 
     # Replace entire block with correct implementation
-    patch_code = block_handler.create_replacement_patch(vars)
+    patch_code = block_handler.create_replacement_patch(vars, prefix_cond)
     new_content = content[:start_pos] + patch_code + content[end_pos:]
     cli_js.write_text(new_content, 'utf-8')
     print("Patch applied successfully! (v1.7.0 block replacement)")

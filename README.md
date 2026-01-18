@@ -22,6 +22,15 @@ curl -fsSL https://raw.githubusercontent.com/hangocduong/claude-code-vietnamese-
 irm https://raw.githubusercontent.com/hangocduong/claude-code-vietnamese-fix/main/install.ps1 | iex
 ```
 
+### ⚠️ Quan trọng
+
+**Sau khi cài đặt, thoát và khởi động lại Claude Code để bản vá có hiệu lực!**
+
+```bash
+# Nhấn Ctrl+C để thoát phiên hiện tại, sau đó:
+claude
+```
+
 ---
 
 ## Sử Dụng
@@ -33,7 +42,7 @@ irm https://raw.githubusercontent.com/hangocduong/claude-code-vietnamese-fix/mai
 | `claude-vn-patch restore` | Khôi phục file gốc |
 | `claude-update` | Cập nhật Claude + tự động vá |
 
-**Sau khi Claude cập nhật:** Chạy `claude-vn-patch` hoặc `claude-update`
+**Sau khi Claude cập nhật:** Chạy `claude-vn-patch` hoặc `claude-update`, rồi **restart Claude Code**.
 
 ---
 
@@ -44,15 +53,15 @@ irm https://raw.githubusercontent.com/hangocduong/claude-code-vietnamese-fix/mai
 Bộ gõ tiếng Việt sử dụng kỹ thuật "backspace-rồi-thay-thế" để chuyển đổi ký tự (`a` → `á`). Claude Code xử lý phím backspace nhưng không hiển thị các ký tự thay thế, gây mất chữ.
 
 ```text
-Gõ: "xin chào" → Kết quả: "xin c" ❌
+Gõ: "cộng hòa xã hội" → Kết quả: "ộng hòa ã hội" ❌
 ```
 
-### Giải pháp
+### Giải pháp (v1.4.0+)
 
-Bản vá chặn xử lý ký tự DEL và chèn lại các ký tự còn lại đúng cách.
+Bản vá dùng stack-based algorithm để xử lý đúng thứ tự ký tự, kể cả khi gõ nhanh.
 
 ```text
-Gõ: "xin chào" → Kết quả: "xin chào" ✓
+Gõ: "cộng hòa xã hội" → Kết quả: "cộng hòa xã hội" ✓
 ```
 
 ---
@@ -76,6 +85,7 @@ Gõ: "xin chào" → Kết quả: "xin chào" ✓
 
 | Lỗi | Giải pháp |
 |-----|-----------|
+| Gõ tiếng Việt vẫn lỗi | Đã restart Claude Code chưa? Nhấn `Ctrl+C`, chạy `claude` |
 | "Could not find Claude Code cli.js" | Cài Claude qua npm: `npm install -g @anthropic-ai/claude-code` |
 | "Could not extract variables" | Mở issue với `claude --version` |
 | "Patch already applied" | Bản vá đã hoạt động, kiểm tra: `claude-vn-patch status` |
@@ -87,21 +97,25 @@ Gõ: "xin chào" → Kết quả: "xin chào" ✓
 <details>
 <summary>Xem cách hoạt động</summary>
 
-### Trích Xuất Biến Động
+### Vấn đề gốc
 
-Script sử dụng regex để tìm các pattern trong mã minify:
+Code gốc của Claude làm backspace **TRƯỚC** khi chèn ký tự mới:
 
-```javascript
-if(l.includes("\x7f")){
-  let $A=(l.match(/\x7f/g)||[]).length,CA=S;
-  for(let _A=0;_A<$A;_A++)CA=CA.backspace();
-  if(!S.equals(CA)){if(S.text!==CA.text)Q(CA.text);T(CA.offset)}
-  // BẢN VÁ CHÈN VÀO ĐÂY
-  ct1(),lt1();return
-}
+```text
+State: "c" | Input: "o[DEL]ộ" (gõ "cộ" nhanh)
+Code gốc: backspace trên "c" → "" (xóa nhầm "c"!)
+Đúng ra: chèn "o"→"co", backspace→"c", chèn "ộ"→"cộ"
 ```
 
-### Mã Được Chèn (v1.4.0+)
+### Giải pháp: Stack-based Algorithm
+
+Dùng stack để tính số DEL thực sự ảnh hưởng state gốc:
+
+- Mỗi ký tự non-DEL: push stack
+- Mỗi DEL: pop stack (hoặc xóa từ original nếu stack rỗng)
+- Khôi phục ký tự bị xóa nhầm, rồi chèn ký tự thay thế
+
+### Code được chèn (v1.4.0+)
 
 ```javascript
 // Stack approach: đếm DEL nào ảnh hưởng original vs consume input chars
@@ -124,20 +138,6 @@ let _a = _ld>=0 ? l.slice(_ld+1) : "";
 for(const c of _a) CA = CA.insert(c);
 ```
 
-**Vấn đề gốc:** Code gốc làm backspace TRƯỚC khi chèn ký tự mới.
-
-```text
-State: "c" | Input: "o[DEL]ộ" (gõ "cộ" nhanh)
-Code gốc: backspace trên "c" → "" (xóa nhầm "c"!)
-Đúng ra: chèn "o"→"co", backspace→"c", chèn "ộ"→"cộ"
-```
-
-**Giải pháp:** Dùng stack để tính số DEL thực sự ảnh hưởng state gốc:
-
-- Mỗi ký tự non-DEL: push stack
-- Mỗi DEL: pop stack (hoặc xóa từ original nếu stack rỗng)
-- Khôi phục ký tự bị xóa nhầm, rồi chèn ký tự thay thế
-
 </details>
 
 ---
@@ -158,10 +158,34 @@ claude-code-vietnamese-fix/
 
 ---
 
+## Changelog
+
+### v1.4.1
+
+- Thêm thông báo restart sau khi cài đặt/cập nhật
+
+### v1.4.0
+
+- Sửa lỗi mất chữ đầu từ khi gõ nhanh (stack-based algorithm)
+
+### v1.2.0
+
+- Thêm hỗ trợ Windows (PowerShell)
+
+### v1.1.0
+
+- Cài đặt một dòng lệnh qua curl/irm
+
+### v1.0.0
+
+- Phiên bản đầu tiên
+
+---
+
 ## Ghi Công
 
 - Ý tưởng ban đầu: [manhit96/claude-code-vietnamese-fix](https://github.com/manhit96/claude-code-vietnamese-fix)
-- Trích xuất động & hỗ trợ v2.1.12: Dự án này
+- Trích xuất động & stack-based algorithm: Dự án này
 
 ---
 

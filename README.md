@@ -1,102 +1,102 @@
-# Claude Code Vietnamese IME Fix
+# Claude Code - Bản Vá Bộ Gõ Tiếng Việt
 
-Fix Vietnamese input (OpenKey, EVKey, Unikey, PHTV) for Claude Code terminal.
+Sửa lỗi nhập liệu tiếng Việt (OpenKey, EVKey, Unikey, PHTV) cho terminal Claude Code.
 
-## Problem
+## Vấn Đề
 
-Vietnamese IMEs use "backspace-then-replace" technique to transform characters (`a` → `á`). Claude Code processes the backspace (DEL char 0x7F) but fails to display replacement characters, causing text loss.
+Bộ gõ tiếng Việt sử dụng kỹ thuật "backspace-rồi-thay-thế" để chuyển đổi ký tự (`a` → `á`). Claude Code xử lý phím backspace (ký tự DEL 0x7F) nhưng không hiển thị được các ký tự thay thế, gây mất chữ.
 
-## Solution
+## Giải Pháp
 
-This patch intercepts the DEL character handling and re-inserts the remaining characters properly.
+Bản vá này chặn xử lý ký tự DEL và chèn lại các ký tự còn lại một cách đúng đắn.
 
-## Tested Versions
+## Phiên Bản Đã Kiểm Tra
 
-- Claude Code v2.1.12 (January 2026)
-- macOS (Homebrew/npm install)
+- Claude Code v2.1.12 (Tháng 1/2026)
+- macOS (cài đặt qua Homebrew/npm)
 
-## Quick Install
+## Cài Đặt Nhanh
 
 ```bash
-# Clone or download this repo
+# Clone hoặc tải repo này
 git clone https://github.com/hangocduong/claude-code-vietnamese-fix.git
 cd claude-code-vietnamese-fix
 
-# Run installer
+# Chạy trình cài đặt
 ./install.sh
 ```
 
-## Manual Install
+## Cài Đặt Thủ Công
 
 ```bash
-# Copy scripts to ~/.claude/scripts/
+# Sao chép scripts vào ~/.claude/scripts/
 mkdir -p ~/.claude/scripts
 cp scripts/*.sh scripts/*.py ~/.claude/scripts/
 chmod +x ~/.claude/scripts/*.sh ~/.claude/scripts/*.py
 
-# Add aliases to shell config
+# Thêm aliases vào file cấu hình shell
 echo 'alias claude-vn-patch="$HOME/.claude/scripts/vietnamese-ime-patch.sh"' >> ~/.zshrc
 echo 'alias claude-update="$HOME/.claude/scripts/claude-update-wrapper.sh"' >> ~/.zshrc
 source ~/.zshrc
 
-# Apply patch
+# Áp dụng bản vá
 claude-vn-patch
 ```
 
-## Usage
+## Cách Sử Dụng
 
-| Command | Description |
-|---------|-------------|
-| `claude-vn-patch` | Apply patch (default) |
-| `claude-vn-patch status` | Check if patch is applied |
-| `claude-vn-patch restore` | Restore original cli.js |
-| `claude-update` | Update Claude + auto-patch |
+| Lệnh | Mô tả |
+|------|-------|
+| `claude-vn-patch` | Áp dụng bản vá (mặc định) |
+| `claude-vn-patch status` | Kiểm tra bản vá đã được áp dụng chưa |
+| `claude-vn-patch restore` | Khôi phục cli.js gốc |
+| `claude-update` | Cập nhật Claude + tự động áp dụng bản vá |
 
-## After Claude Updates
+## Sau Khi Claude Cập Nhật
 
-Run one of:
+Chạy một trong các lệnh sau:
 ```bash
-claude-vn-patch      # Just patch
-claude-update        # Update + patch
+claude-vn-patch      # Chỉ áp dụng bản vá
+claude-update        # Cập nhật + áp dụng bản vá
 ```
 
-## How It Works
+## Cách Hoạt Động
 
-### The Bug
+### Lỗi
 
 ```
-User types: "xin chào" using Vietnamese IME
-IME sends: x → xi → xin → xin<DEL>c → xin ch → xin ch<DEL>à → xin chà<DEL>o → xin chào
-Claude processes: <DEL> removes char, but remaining chars are lost
-Result: "xin c" instead of "xin chào"
+Người dùng gõ: "xin chào" bằng bộ gõ tiếng Việt
+Bộ gõ gửi: x → xi → xin → xin<DEL>c → xin ch → xin ch<DEL>à → xin chà<DEL>o → xin chào
+Claude xử lý: <DEL> xóa ký tự, nhưng các ký tự còn lại bị mất
+Kết quả: "xin c" thay vì "xin chào"
 ```
 
-### The Fix
+### Cách Sửa
 
-1. **Detect** DEL character handling block in minified cli.js
-2. **Extract** variable names dynamically (they change between versions)
-3. **Inject** code that:
-   - Filters out DEL chars from input
-   - Re-inserts remaining characters properly
-   - Updates text/offset state
+1. **Phát hiện** khối xử lý ký tự DEL trong cli.js đã được minify
+2. **Trích xuất** tên biến động (chúng thay đổi giữa các phiên bản)
+3. **Chèn** mã:
+   - Lọc bỏ ký tự DEL khỏi input
+   - Chèn lại các ký tự còn lại đúng cách
+   - Cập nhật trạng thái text/offset
 
-### Dynamic Variable Extraction
+### Trích Xuất Biến Động
 
-The script uses regex to find patterns like:
+Script sử dụng regex để tìm các pattern như:
 ```javascript
-// Original (minified)
+// Mã gốc (đã minify)
 if(l.includes("\x7f")){
   let $A=(l.match(/\x7f/g)||[]).length,CA=S;
   for(let _A=0;_A<$A;_A++)CA=CA.backspace();
   if(!S.equals(CA)){if(S.text!==CA.text)Q(CA.text);T(CA.offset)}
-  // ... PATCH INSERTED HERE ...
+  // ... BẢN VÁ ĐƯỢC CHÈN VÀO ĐÂY ...
   ct1(),lt1();return
 }
 ```
 
-Extracts: `input=l, state=CA, cur_state=S, text_fn=Q, offset_fn=T`
+Trích xuất: `input=l, state=CA, cur_state=S, text_fn=Q, offset_fn=T`
 
-### Injected Code
+### Mã Được Chèn
 
 ```javascript
 let _vn=l.replace(/\x7f/g,"");
@@ -109,54 +109,54 @@ if(_vn.length>0){
 }
 ```
 
-## Project Structure
+## Cấu Trúc Dự Án
 
 ```
 claude-code-vietnamese-fix/
 ├── README.md
-├── install.sh                           # One-click installer
+├── install.sh                           # Trình cài đặt một lệnh
 ├── scripts/
-│   ├── vietnamese-ime-patch.sh          # Entry point (bash)
-│   ├── vietnamese-ime-patch-core.py     # Core logic (python)
-│   └── claude-update-wrapper.sh         # Update + patch wrapper
+│   ├── vietnamese-ime-patch.sh          # Điểm vào (bash)
+│   ├── vietnamese-ime-patch-core.py     # Logic chính (python)
+│   └── claude-update-wrapper.sh         # Wrapper cập nhật + vá
 └── docs/
-    └── technical-details.md             # Deep dive into the fix
+    └── technical-details.md             # Chi tiết kỹ thuật về bản vá
 ```
 
-## Requirements
+## Yêu Cầu
 
 - Python 3.6+
-- Claude Code installed via npm (`npm install -g @anthropic-ai/claude-code`)
-- macOS or Linux
+- Claude Code được cài đặt qua npm (`npm install -g @anthropic-ai/claude-code`)
+- macOS hoặc Linux
 
-## Troubleshooting
+## Xử Lý Sự Cố
 
-### "Could not find Claude Code cli.js"
+### "Could not find Claude Code cli.js" (Không tìm thấy cli.js của Claude Code)
 
-Claude Code not installed or installed as binary (not npm). Install via:
+Claude Code chưa được cài đặt hoặc được cài đặt dạng binary (không phải npm). Cài đặt bằng:
 ```bash
 npm install -g @anthropic-ai/claude-code
 ```
 
-### "Could not extract variables"
+### "Could not extract variables" (Không thể trích xuất biến)
 
-Claude Code version may have changed significantly. Open an issue with:
+Phiên bản Claude Code có thể đã thay đổi đáng kể. Mở issue với:
 ```bash
 claude --version
 ```
 
-### "Patch already applied"
+### "Patch already applied" (Bản vá đã được áp dụng)
 
-The fix is already active. Check with:
+Bản sửa lỗi đã hoạt động. Kiểm tra bằng:
 ```bash
 claude-vn-patch status
 ```
 
-## Credits
+## Ghi Công
 
-- Original fix concept: [manhit96/claude-code-vietnamese-fix](https://github.com/manhit96/claude-code-vietnamese-fix)
-- Dynamic extraction & v2.1.12 support: This project
+- Ý tưởng sửa lỗi ban đầu: [manhit96/claude-code-vietnamese-fix](https://github.com/manhit96/claude-code-vietnamese-fix)
+- Trích xuất động & hỗ trợ v2.1.12: Dự án này
 
-## License
+## Giấy Phép
 
 MIT
